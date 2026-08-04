@@ -1,55 +1,106 @@
-name: Communicating with Catalyst
+name: AI Review
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, labeled]
-  workflow_dispatch:
+    types: [labeled]
 
 jobs:
-  trigger_catalyst_function:
+  ai-review:
+    if: github.event.label.name == 'ai-review'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
     steps:
-      - name: Call Zoho Catalyst Function
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          set -euo pipefail
+          git diff "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" > pr.diff
+
+      - name: Call Zoho Catalyst AI review function
+        id: review
         env:
-          CATALYST_FUNCTION_URL: ${{ secrets.CATALYST_FUNCTION_URL }}
           ENDPOINT: ${{ secrets.ENDPOINT }}
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_ACTION: ${{ github.event.action }}
-          ACTOR: ${{ github.actor }}
-          REPO: ${{ github.repository }}
-          REF: ${{ github.ref }}
-          RUN_ID: ${{ github.run_id }}
+          CATALYST_FUNCTION_URL: ${{ secrets.CATALYST_FUNCTION_URL }}
+        shell: bash
         run: |
           set -euo pipefail
 
-          REQUEST_URL="${CATALYST_FUNCTION_URL:-${ENDPOINT:-}}"
-          EVENT_PAYLOAD_PATH="${GITHUB_EVENT_PATH:-}"
-
-          if [ -z "${REQUEST_URL:-}" ]; then
-            echo "Both CATALYST_FUNCTION_URL and ENDPOINT secrets are missing or empty"
+          if [ -z "${ENDPOINT:-}" ]; then
+            echo "ENDPOINT secret is missing or empty"
             exit 1
           fi
 
-          if [ -z "${EVENT_PAYLOAD_PATH:-}" ] || [ ! -f "${EVENT_PAYLOAD_PATH}" ]; then
-            echo "GITHUB_EVENT_PATH is missing or not a file"
+          if [ -z "${CATALYST_FUNCTION_URL:-}" ]; then
+            echo "CATALYST_FUNCTION_URL secret is missing or empty"
             exit 1
           fi
 
-          jq -n \
-            --arg event "$EVENT_NAME" \
-            --arg action "$EVENT_ACTION" \
-            --arg actor "$ACTOR" \
-            --arg repo "$REPO" \
-            --arg ref "$REF" \
-            --arg run_id "$RUN_ID" \
-            --slurpfile payload "$EVENT_PAYLOAD_PATH" \
-            '{event: $event, action: $action, actor: $actor, repo: $repo, ref: $ref, run_id: $run_id, payload: $payload[0]}' \
-            > catalyst_body.json
+          python3 << 'PYEOF' > parsed_endpoint.env
+import os
+import sys
+import urllib.parse as up
 
-          curl --fail --show-error --location \
+url = os.environ["ENDPOINT"]
+parsed = up.urlparse(url)
+
+if parsed.scheme not in ("http", "https"):
+    print("Invalid ENDPOINT URL scheme", file=sys.stderr)
+    sys.exit(1)
+
+parts = parsed.path.strip("/").split("/")
+if len(parts) < 6:
+    print("ENDPOINT path format is unexpected", file=sys.stderr)
+    sys.exit(1)
+
+query = up.parse_qs(parsed.query)
+zapikey = query.get("zapikey", [""])[0]
+
+if not zapikey:
+    print("zapikey not found in ENDPOINT query", file=sys.stderr)
+    sys.exit(1)
+
+domain = parsed.netloc.split(".")[-1]
+org_id = parts[1]
+channel_name = parts[5]
+
+print(f"domain={domain}")
+print(f"org_id={org_id}")
+print(f"channel_name={channel_name}")
+print(f"zapikey={zapikey}")
+PYEOF
+
+          source parsed_endpoint.env
+
+          ENC_DOMAIN=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$domain")
+          ENC_ORG=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$org_id")
+          ENC_CHANNEL=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$channel_name")
+          ENC_ZAPIKEY=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$zapikey")
+
+          REQUEST_URL="${CATALYST_FUNCTION_URL}?domain=${ENC_DOMAIN}&org_id=${ENC_ORG}&channel_name=${ENC_CHANNEL}&channel_unique_name=${ENC_CHANNEL}&zapikey=${ENC_ZAPIKEY}"
+
+          RESPONSE=$(curl --fail --show-error --silent --location \
             --request POST "$REQUEST_URL" \
             --header "Content-Type: application/json" \
-            --data @catalyst_body.json
+            --data-binary @<(jq -n \
+              --rawfile diff pr.diff \
+              --arg repo "${{ github.repository }}" \
+              --arg pr_number "${{ github.event.pull_request.number }}" \
+              '{diff: $diff, repo: $repo, pr_number: $pr_number}'))
+
+          echo "$RESPONSE" > response.json
+
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // "error"')
+          COMMENT=$(echo "$RESPONSE" | jq -r '.comment // "No comment provided"')
+
+          {
+            echo "status=$STATUS"
+            echo "comment<<EOF"
+            echo "$COMMENT"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
