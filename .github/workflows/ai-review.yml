@@ -1,0 +1,56 @@
+name: Communicating with Catalyst
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+  workflow_dispatch:
+
+jobs:
+  trigger_catalyst_function:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Call Zoho Catalyst Function
+        env:
+          CATALYST_FUNCTION_URL: ${{ secrets.CATALYST_FUNCTION_URL }}
+          CATALYST_AUTH_TOKEN: ${{ secrets.CATALYST_AUTH_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          RUN_ID: ${{ github.run_id }}
+          EVENT_PAYLOAD_PATH: ${{ github.event_path }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CATALYST_FUNCTION_URL:-}" ]; then
+            echo "CATALYST_FUNCTION_URL secret is missing or empty"
+            exit 1
+          fi
+
+          if [ -z "${CATALYST_AUTH_TOKEN:-}" ]; then
+            echo "CATALYST_AUTH_TOKEN secret is missing or empty"
+            exit 1
+          fi
+
+          jq -n \
+            --arg event "$EVENT_NAME" \
+            --arg action "$EVENT_ACTION" \
+            --arg actor "$ACTOR" \
+            --arg repo "$REPO" \
+            --arg ref "$REF" \
+            --arg run_id "$RUN_ID" \
+            --slurpfile payload "$EVENT_PAYLOAD_PATH" \
+            '{event: $event, action: $action, actor: $actor, repo: $repo, ref: $ref, run_id: $run_id, payload: $payload[0]}' \
+            > catalyst_body.json
+
+          REQUEST_URL="$CATALYST_FUNCTION_URL"
+
+          curl --fail --show-error --location \
+            --request POST "$REQUEST_URL" \
+            --header "Content-Type: application/json" \
+            --header "Authorization: Bearer $CATALYST_AUTH_TOKEN" \
+            --data @catalyst_body.json
