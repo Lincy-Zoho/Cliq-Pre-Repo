@@ -1,0 +1,110 @@
+name: Communicating with Catalyst
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+  workflow_dispatch:
+
+jobs:
+  trigger_catalyst_function:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Call Zoho Catalyst Function
+        env:
+          CATALYST_FUNCTION_URL: ${{ secrets.CATALYST_FUNCTION_URL }}
+          ENDPOINT: ${{ secrets.ENDPOINT }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          RUN_ID: ${{ github.run_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABEL_NAME: ${{ github.event.label.name }}
+        run: |
+          set -euo pipefail
+
+          REQUEST_URL="${CATALYST_FUNCTION_URL:-${ENDPOINT:-}}"
+          EVENT_PAYLOAD_PATH="${GITHUB_EVENT_PATH:-}"
+
+          if [ -z "${REQUEST_URL:-}" ]; then
+            echo "Both CATALYST_FUNCTION_URL and ENDPOINT secrets are missing or empty"
+            exit 1
+          fi
+
+          if [ -z "${EVENT_PAYLOAD_PATH:-}" ] || [ ! -f "${EVENT_PAYLOAD_PATH}" ]; then
+            echo "GITHUB_EVENT_PATH is missing or not a file"
+            exit 1
+          fi
+
+          if [ -z "${ENDPOINT:-}" ]; then
+            echo "ENDPOINT secret is missing or empty"
+            exit 1
+          fi
+
+            CHANNEL_IDENTIFIER=$(python3 << 'PYEOF'
+            import os
+            import sys
+            import urllib.parse as up
+
+            url = os.environ["ENDPOINT"]
+            parsed = up.urlparse(url)
+            parts = parsed.path.strip("/").split("/")
+            query = up.parse_qs(parsed.query)
+
+            channel = ""
+
+            # Prefer explicit query params if present.
+            if query.get("channel_unique_name"):
+              channel = query["channel_unique_name"][0]
+            elif query.get("channel_name"):
+              channel = query["channel_name"][0]
+
+            # Fallback: extract from .../channelsbyname/{channel}/message
+            if not channel:
+              try:
+                idx = parts.index("channelsbyname")
+                if idx + 1 < len(parts):
+                  channel = parts[idx + 1]
+              except ValueError:
+                pass
+
+            if not channel:
+              print("Unable to extract channel name from ENDPOINT", file=sys.stderr)
+              sys.exit(1)
+
+            # Some Cliq webhook URLs prefix channel unique name with '*'. Strip it.
+            print(channel.lstrip("*"))
+            PYEOF
+            )
+
+          ENC_CHANNEL=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$CHANNEL_IDENTIFIER")
+
+          if [ -n "${CATALYST_FUNCTION_URL:-}" ]; then
+            if [[ "$CATALYST_FUNCTION_URL" == *\?* ]]; then
+              REQUEST_URL="${CATALYST_FUNCTION_URL}&channel_unique_name=${ENC_CHANNEL}"
+            else
+              REQUEST_URL="${CATALYST_FUNCTION_URL}?channel_unique_name=${ENC_CHANNEL}"
+            fi
+          fi
+
+          jq -n \
+            --arg event "$EVENT_NAME" \
+            --arg action "$EVENT_ACTION" \
+            --arg actor "$ACTOR" \
+            --arg repo "$REPO" \
+            --arg ref "$REF" \
+            --arg run_id "$RUN_ID" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg label_name "$LABEL_NAME" \
+            --slurpfile payload "$EVENT_PAYLOAD_PATH" \
+            '{event: $event, action: $action, actor: $actor, repo: $repo, ref: $ref, run_id: $run_id, pr_number: $pr_number, label_name: $label_name, payload: $payload[0]}' \
+            > catalyst_body.json
+
+          curl --fail --show-error --location \
+            --request POST "$REQUEST_URL" \
+            --header "Content-Type: application/json" \
+            --data @catalyst_body.json
