@@ -3,246 +3,386 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modern Sign In</title>
+<title>Modern Login</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Poppins',sans-serif;
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
 }
 
 body{
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(-45deg,#667eea,#764ba2,#6a11cb,#2575fc);
-    background-size:400% 400%;
-    animation:gradient 12s ease infinite;
+
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+overflow:hidden;
+
+background:linear-gradient(-45deg,#667eea,#764ba2,#6a11cb,#2575fc);
+background-size:400% 400%;
+
+animation:bg 12s ease infinite;
+
 }
 
-@keyframes gradient{
-    0%{background-position:0% 50%;}
-    50%{background-position:100% 50%;}
-    100%{background-position:0% 50%;}
+@keyframes bg{
+
+0%{
+background-position:0% 50%;
+}
+
+50%{
+background-position:100% 50%;
+}
+
+100%{
+background-position:0% 50%;
+}
+
+}
+
+.circle{
+
+position:absolute;
+border-radius:50%;
+background:rgba(255,255,255,.12);
+animation:float 8s ease-in-out infinite;
+
+}
+
+.c1{
+
+width:180px;
+height:180px;
+
+left:8%;
+top:8%;
+
+}
+
+.c2{
+
+width:120px;
+height:120px;
+
+right:8%;
+bottom:8%;
+
+animation-delay:2s;
+
+}
+
+.c3{
+
+width:80px;
+height:80px;
+
+left:18%;
+bottom:18%;
+
+animation-delay:4s;
+
+}
+
+@keyframes float{
+
+0%,100%{
+transform:translateY(0);
+}
+
+50%{
+transform:translateY(-25px);
+}
+
 }
 
 .container{
 
-    width:390px;
-    padding:40px;
-    border-radius:20px;
+width:400px;
 
-    background:rgba(255,255,255,.15);
-    backdrop-filter:blur(15px);
-    -webkit-backdrop-filter:blur(15px);
+padding:40px;
 
-    border:1px solid rgba(255,255,255,.2);
+border-radius:25px;
 
-    box-shadow:0 20px 40px rgba(0,0,0,.2);
+background:rgba(255,255,255,.15);
+
+backdrop-filter:blur(20px);
+
+border:1px solid rgba(255,255,255,.25);
+
+box-shadow:0 20px 40px rgba(0,0,0,.25);
+
+z-index:10;
 
 }
 
 .logo{
 
-    width:70px;
-    height:70px;
-    border-radius:50%;
-    margin:auto;
-    margin-bottom:20px;
+width:80px;
+height:80px;
 
-    display:flex;
-    justify-content:center;
-    align-items:center;
+margin:auto;
+margin-bottom:20px;
 
-    background:white;
-    font-size:32px;
+display:flex;
+justify-content:center;
+align-items:center;
+
+border-radius:50%;
+
+background:white;
+
+font-size:40px;
+
 }
 
 h2{
 
-    text-align:center;
-    color:white;
-    margin-bottom:8px;
+text-align:center;
+color:white;
+margin-bottom:10px;
 
 }
 
 .subtitle{
 
-    color:#eee;
-    text-align:center;
-    font-size:14px;
-    margin-bottom:30px;
+text-align:center;
+color:#f1f1f1;
+font-size:14px;
+margin-bottom:30px;
 
 }
 
 .input-group{
 
-    margin-bottom:18px;
-    position:relative;
+position:relative;
+margin-bottom:20px;
+
+}
+
+.left-icon{
+
+position:absolute;
+
+left:15px;
+top:50%;
+
+transform:translateY(-50%);
+font-size:18px;
+
+}
+
+.right-icon{
+
+position:absolute;
+
+right:15px;
+top:50%;
+
+transform:translateY(-50%);
+
+cursor:pointer;
 
 }
 
 .input-group input{
 
-    width:100%;
-    padding:14px 45px 14px 15px;
+width:100%;
 
-    border:none;
-    outline:none;
+padding:14px 45px;
 
-    border-radius:10px;
+border:none;
+outline:none;
 
-    background:rgba(255,255,255,.2);
+border-radius:10px;
 
-    color:white;
-    font-size:15px;
+background:rgba(255,255,255,.2);
+
+color:white;
+
+font-size:15px;
 
 }
 
 .input-group input::placeholder{
 
-    color:#f1f1f1;
-
-}
-
-.icon{
-
-    position:absolute;
-    right:15px;
-    top:50%;
-    transform:translateY(-50%);
-    cursor:pointer;
-    color:white;
+color:#f1f1f1;
 
 }
 
 .options{
 
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin:18px 0;
+display:flex;
 
-    color:white;
-    font-size:14px;
+justify-content:space-between;
+
+align-items:center;
+
+font-size:14px;
+
+margin-bottom:20px;
+
+color:white;
 
 }
 
 .options a{
 
-    color:white;
-    text-decoration:none;
+color:white;
+text-decoration:none;
 
 }
 
 button{
 
-    width:100%;
-    padding:14px;
+width:100%;
 
-    border:none;
-    border-radius:10px;
+padding:14px;
 
-    background:white;
-    color:#4f46e5;
+border:none;
 
-    font-size:16px;
-    font-weight:600;
+border-radius:10px;
 
-    cursor:pointer;
-    transition:.3s;
+background:linear-gradient(90deg,#7b2ff7,#3a7bd5);
+
+color:white;
+
+font-size:16px;
+
+font-weight:600;
+
+cursor:pointer;
+
+transition:.3s;
 
 }
 
 button:hover{
 
-    transform:translateY(-2px);
-    box-shadow:0 10px 20px rgba(0,0,0,.2);
+transform:translateY(-2px) scale(1.02);
+
+box-shadow:0 10px 25px rgba(0,0,0,.3);
 
 }
 
 .divider{
 
-    text-align:center;
-    color:white;
-    margin:25px 0;
-    position:relative;
+text-align:center;
+
+margin:25px 0;
+
+color:white;
+
+position:relative;
 
 }
 
-.divider::before,
-.divider::after{
+.divider:before{
 
-    content:"";
-    position:absolute;
-    width:35%;
-    height:1px;
-    background:rgba(255,255,255,.4);
-    top:50%;
+content:"";
+
+position:absolute;
+
+left:0;
+
+top:50%;
+
+width:35%;
+
+height:1px;
+
+background:rgba(255,255,255,.3);
 
 }
 
-.divider::before{
-    left:0;
-}
+.divider:after{
 
-.divider::after{
-    right:0;
+content:"";
+
+position:absolute;
+
+right:0;
+
+top:50%;
+
+width:35%;
+
+height:1px;
+
+background:rgba(255,255,255,.3);
+
 }
 
 .social{
 
-    display:flex;
-    gap:15px;
+display:flex;
+
+gap:15px;
 
 }
 
 .social button{
 
-    background:rgba(255,255,255,.2);
-    color:white;
-    border:1px solid rgba(255,255,255,.3);
+background:rgba(255,255,255,.2);
+
+border:1px solid rgba(255,255,255,.3);
 
 }
 
 .social button:hover{
 
-    background:white;
-    color:#333;
+background:white;
+color:#333;
 
 }
 
 .signup{
 
-    margin-top:25px;
-    text-align:center;
-    color:white;
-    font-size:14px;
+margin-top:25px;
+
+text-align:center;
+
+color:white;
 
 }
 
 .signup a{
 
-    color:#fff;
-    font-weight:600;
-    text-decoration:none;
+color:#fff;
+
+font-weight:600;
+
+text-decoration:none;
 
 }
 
-@media(max-width:430px){
+.footer{
+
+margin-top:25px;
+
+text-align:center;
+
+font-size:12px;
+
+color:#eee;
+
+}
+
+@media(max-width:480px){
 
 .container{
 
-    width:92%;
-    padding:30px;
+width:92%;
+padding:30px;
 
 }
 
@@ -254,39 +394,70 @@ button:hover{
 
 <body>
 
+<div class="circle c1"></div>
+<div class="circle c2"></div>
+<div class="circle c3"></div>
+
 <div class="container">
 
 <div class="logo">
-🔐
+🚀
 </div>
 
-<h2>Welcome Back</h2>
+<h2>Welcome Back 👋</h2>
 
-<p class="subtitle">Sign in to continue</p>
+<p class="subtitle">
+Sign in to continue to your workspace
+</p>
 
-<form>
+<form id="loginForm">
 
 <div class="input-group">
-<input type="email" placeholder="Email Address" required>
+
+<span class="left-icon">📧</span>
+
+<input
+type="email"
+placeholder="Email Address"
+required>
+
 </div>
 
 <div class="input-group">
-<input type="password" id="password" placeholder="Password" required>
-<span class="icon" onclick="togglePassword()">👁️</span>
+
+<span class="left-icon">🔒</span>
+
+<input
+type="password"
+id="password"
+placeholder="Password"
+required>
+
+<span
+class="right-icon"
+onclick="togglePassword()">
+👁️
+</span>
+
 </div>
 
 <div class="options">
 
 <label>
+
 <input type="checkbox">
+
  Remember me
+
 </label>
 
-<a href="#">Forgot Password?</a>
+<a href="#">
+Forgot Password?
+</a>
 
 </div>
 
-<button type="submit">
+<button id="loginBtn">
 Sign In
 </button>
 
@@ -309,7 +480,16 @@ OR
 <div class="signup">
 
 Don't have an account?
-<a href="#">Create Account</a>
+
+<a href="#">
+Create Account
+</a>
+
+</div>
+
+<div class="footer">
+
+Made with ❤️ using HTML & CSS
 
 </div>
 
@@ -321,11 +501,35 @@ Don't have an account?
 
 function togglePassword(){
 
-const pwd=document.getElementById("password");
+const password=document.getElementById("password");
 
-pwd.type=(pwd.type==="password")?"text":"password";
+password.type=password.type==="password"
+?"text"
+:"password";
 
 }
+
+document
+.getElementById("loginForm")
+.addEventListener("submit",function(e){
+
+e.preventDefault();
+
+const btn=document.getElementById("loginBtn");
+
+btn.innerHTML="Signing In...";
+
+btn.disabled=true;
+
+setTimeout(function(){
+
+btn.innerHTML="✔ Successfully Signed In";
+
+btn.style.background="#16a34a";
+
+},2000);
+
+});
 
 </script>
 
