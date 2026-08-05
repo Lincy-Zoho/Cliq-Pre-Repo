@@ -26,6 +26,5 @@ jobs:
       - name: Notify Through Github-Informer Action
         uses: Lincy-Zoho/Github-Informer@v1
         with:
-          channel-endpoint: ${{ secrets.ENDPOINT }}
           endpoint: ${{ secrets.ENDPOINT }}
           catalyst-function-url: ${{ secrets.CATALYST_FUNCTION_URL }}
