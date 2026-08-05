@@ -1,8 +1,19 @@
 name: Communicating with Catalyst
 
 on:
+  push:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, labeled, unlabeled, closed]
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited]
+  release:
+    types: [published, edited]
   workflow_dispatch:
 
 jobs:
