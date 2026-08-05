@@ -24,7 +24,25 @@ jobs:
       pull-requests: read
     steps:
       - name: Notify Through Github-Informer Action
+        id: informer
         uses: Lincy-Zoho/Github-Informer@v1
         with:
           endpoint: ${{ secrets.ENDPOINT }}
           catalyst-function-url: ${{ secrets.CATALYST_FUNCTION_URL }}
+          event-name: ${{ github.event_name }}
+          event-action: ${{ github.event.action }}
+          actor: ${{ github.actor }}
+          repo: ${{ github.repository }}
+          ref: ${{ github.ref }}
+          run-id: ${{ github.run_id }}
+          pr-number: ${{ github.event.pull_request.number || github.event.number || '' }}
+          label-name: ${{ github.event.label.name || '' }}
+          event-payload-path: ${{ github.event_path }}
+
+      - name: Debug Catalyst Call Result
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "request-url: ${{ steps.informer.outputs.request-url }}"
+          echo "status-code: ${{ steps.informer.outputs.status-code }}"
+          echo "response-body: ${{ steps.informer.outputs.response-body }}"
