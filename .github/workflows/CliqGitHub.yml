@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event_name != 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@main
+        uses: Lincy-Zoho/GitHub-Informer-New@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
