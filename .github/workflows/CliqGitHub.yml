@@ -65,12 +65,20 @@ on:
     # types : [started]
   workflow_dispatch:
     # No Types
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
   
 jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
     steps:
-      - uses: Lincy-Zoho/GitHub-Informer-New@main
+      - if: ${{ github.event_name != 'pull_request' }}
+        uses: Lincy-Zoho/GitHub-Informer-New@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           channel-endpoint: ${{ secrets.ENDPOINT }}
           #branch-protection-rule-message: 'Security Update :Security:\n (event) (rule) is (action) by (me) at (repo) under (ref)'
