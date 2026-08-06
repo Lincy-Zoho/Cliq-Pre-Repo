@@ -65,6 +65,11 @@ on:
     # types : [started]
   workflow_dispatch:
     # No Types
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
   
 jobs:
   connecting_cliq:
