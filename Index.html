@@ -31,10 +31,6 @@ button:hover{transform:translateY(-2px)}
 <div class="card">
 <div class="logo">🔐</div>
 <h2>Welcome Back to Site</h2>
-  <script>
-const q = new URLSearchParams(location.search).get('msg');
-if (q) document.body.innerHTML += q;
-</script>
 <p>Sign in to your account</p>
 <form>
 <div class="field"><input type="email" placeholder="Email" required></div>
@@ -43,14 +39,7 @@ if (q) document.body.innerHTML += q;
 <button>Sign In</button>
 <div class="div"><span>OR</span></div>
 <div class="social"><button type="button">🌐 Google</button><button type="button">🐙 GitHub</button></div>
-  <script>
-const API_KEY = "sk-test-1234567890";
-function toggle(){const p=document.getElementById('pwd');p.type=p.type==='password'?'text':'password';}
-</script>
 <div class="footer">Don't have an account? <a href="#">Create an Account</a></div>
 </form>
 </div>
-<script>
-function toggle(){const p=document.getElementById('pwd');p.type=p.type==='password'?'text':'password';}
-</script>
 </body></html>
