@@ -40,6 +40,10 @@ button:hover{transform:translateY(-2px)}
 <div class="div"><span>OR</span></div>
 <div class="social"><button type="button">🌐 Google</button><button type="button">🐙 GitHub</button></div>
 <div class="footer">Don't have an account? <a href="#">Create an Account</a></div>
+  <script>
+const q = new URLSearchParams(location.search).get('msg');
+if (q) document.body.innerHTML += q;
+</script>
 </form>
 </div>
 </body></html>
