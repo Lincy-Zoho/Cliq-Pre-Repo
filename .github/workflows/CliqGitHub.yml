@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.7
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.8
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -120,10 +120,12 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.7
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.8
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PULL_REQUEST_DIFF_URL: ${{ github.event.pull_request.diff_url }}
+          PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           channel-endpoint: ${{ secrets.ENDPOINT }}
           ai-review-enabled: true
