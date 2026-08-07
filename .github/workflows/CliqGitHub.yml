@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event_name != 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.2
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -120,7 +120,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.2
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.3
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
