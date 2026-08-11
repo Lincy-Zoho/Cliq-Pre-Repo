@@ -37,8 +37,9 @@ on:
   public:
     # No Types
   pull_request:
-    # Keep only actions that produce AI Review Gate in auto mode.
-    types: [ opened , reopened , synchronize ]
+    # Include closed so PR close notifications can post in the existing Cliq thread.
+    # AI review auto-mode still runs only on opened/reopened/synchronize.
+    types: [ opened , reopened , synchronize , closed ]
   pull_request_target:
     # It works only for opened , synchronize and reopened if not specified
     types: [ assigned , unassigned , labeled , unlabeled , opened , closed , edited , reopened , synchronize , converted_to_draft , ready_for_review , locked , unlocked , review_requested , review_request_removed , auto_merge_enabled , auto_merge_disabled ]
@@ -80,7 +81,9 @@ jobs:
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
         uses: Lincy-Zoho/GitHub-Informer-New@v2.2
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # For private ProjectV2 access, create repo secret PROJECT_TOKEN with repo + project scopes.
+          # Falls back to github.token when PROJECT_TOKEN is not set.
+          GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN || github.token }}
           # Previous mode (PR marker comment storage):
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
@@ -131,7 +134,9 @@ jobs:
       - if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
         uses: Lincy-Zoho/GitHub-Informer-New@v2.2
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # For private ProjectV2 access, create repo secret PROJECT_TOKEN with repo + project scopes.
+          # Falls back to github.token when PROJECT_TOKEN is not set.
+          GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN || github.token }}
           # Previous mode (PR marker comment storage):
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
