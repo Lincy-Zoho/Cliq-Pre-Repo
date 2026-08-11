@@ -79,9 +79,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Configure this once. Optional repo/org variable CLIQ_THREAD_FIELD_NAME can override it.
-      GITHUB_PROJECT_THREAD_FIELD_NAME: ${{ vars.CLIQ_THREAD_FIELD_NAME || 'Cliq Thread ID' }}
+      GITHUB_PROJECT_THREAD_FIELD_NAME: ${{ vars.CLIQ_THREAD_FIELD_NAME || 'Cliq Thread ID 123' }}
       # Configure this once. Optional repo/org variable CLIQ_PROJECT_NUMBER can override it.
-      GITHUB_PROJECT_NUMBER: ${{ vars.CLIQ_PROJECT_NUMBER || '1' }}
+      GITHUB_PROJECT_NUMBER: ${{ vars.CLIQ_PROJECT_NUMBER || '10' }}
     steps:
       - name: Validate project token
         shell: bash
