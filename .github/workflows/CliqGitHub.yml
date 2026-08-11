@@ -78,6 +78,10 @@ jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
     env:
+      # Supported values: user or bot
+      CLIQ_NOTIFICATION_MODE: user
+      # Required only when CLIQ_NOTIFICATION_MODE=bot.
+      CLIQ_BOT_UNIQUE_NAME: "githubnotification"
       # Configure this once. Use the numeric field identifier from the Project field settings URL,
       # or provide the GraphQL node id directly (PVTF_*).
       GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '377241900' }}
@@ -94,6 +98,39 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare Cliq endpoint
+        id: prepare-cliq-endpoint
+        shell: bash
+        env:
+          RAW_CLIQ_ENDPOINT: ${{ secrets.ENDPOINT }}
+        run: |
+          mode=$(printf '%s' "$CLIQ_NOTIFICATION_MODE" | tr '[:upper:]' '[:lower:]')
+
+          if [[ -z "$RAW_CLIQ_ENDPOINT" ]]; then
+            echo "ENDPOINT secret is missing."
+            exit 1
+          fi
+
+          if [[ "$mode" == "bot" ]]; then
+            if [[ -z "$CLIQ_BOT_UNIQUE_NAME" ]]; then
+              echo "CLIQ_BOT_UNIQUE_NAME is required when CLIQ_NOTIFICATION_MODE=bot."
+              exit 1
+            fi
+
+            endpoint="$RAW_CLIQ_ENDPOINT"
+            if [[ "$endpoint" == *"githubnotification="* ]]; then
+              resolved_endpoint="$endpoint"
+            elif [[ "$endpoint" == *"?"* ]]; then
+              resolved_endpoint="$endpoint&bot_unique_name=$CLIQ_BOT_UNIQUE_NAME"
+            else
+              resolved_endpoint="$endpoint?bot_unique_name=$CLIQ_BOT_UNIQUE_NAME"
+            fi
+          else
+            resolved_endpoint="$RAW_CLIQ_ENDPOINT"
+          fi
+
+          echo "resolved-endpoint=$resolved_endpoint" >> "$GITHUB_OUTPUT"
+
       - name: Debug project configuration
         if: ${{ github.event_name == 'pull_request_target' }}
         shell: bash
@@ -109,6 +146,12 @@ jobs:
           echo "Debug: repository=$GITHUB_REPOSITORY"
           echo "Debug: github_ref=$GITHUB_REF"
           echo "Debug: workflow_sha=$GITHUB_SHA"
+          echo "Debug: cliq_notification_mode=$CLIQ_NOTIFICATION_MODE"
+          if [[ -n "$CLIQ_BOT_UNIQUE_NAME" ]]; then
+            echo "Debug: cliq_bot_unique_name_present=true"
+          else
+            echo "Debug: cliq_bot_unique_name_present=false"
+          fi
           echo "Debug: pr_head_sha=$PR_HEAD_SHA"
           echo "Debug: pr_base_sha=$PR_BASE_SHA"
           echo "Debug: ai_check_name=$AI_REVIEW_CHECK_NAME"
@@ -242,7 +285,7 @@ jobs:
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.13
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.15
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -254,7 +297,7 @@ jobs:
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           # Auto mode: resolve field id by field name.
         with:
-          channel-endpoint: ${{ secrets.ENDPOINT }}
+          channel-endpoint: ${{ steps.prepare-cliq-endpoint.outputs.resolved-endpoint }}
           #branch-protection-rule-message: 'Security Update :Security:\n (event) (rule) is (action) by (me) at (repo) under (ref)'
           #check-run-message: 'Check Run Status :server:\n (event) (run) is (action) by (me) at (repo) under (ref)'
           #check-suite-message: 'Check Suite Status :server:\n (event) is (action) by (me) at (repo) under (ref)'
@@ -293,7 +336,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.13
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.15
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -308,7 +351,7 @@ jobs:
           PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         with:
-          channel-endpoint: ${{ secrets.ENDPOINT }}
+          channel-endpoint: ${{ steps.prepare-cliq-endpoint.outputs.resolved-endpoint }}
           ai-review-enabled: true
           ai-review-trigger: auto
           ai-review-on-sync: true
@@ -320,3 +363,47 @@ jobs:
           # OpenAI  -> ai-review-api-url: https://api.openai.com/v1/chat/completions
           # Claude  -> ai-review-api-url: https://api.anthropic.com/v1/messages
           # Gemini  -> ai-review-api-url: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent
+
+      - name: Ensure AI Review Gate check is reported
+        if: ${{ github.event_name == 'pull_request_target' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CHECK_NAME: AI Review Gate
+        run: |
+          checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs"
+          checks_body=$(curl -sS \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "$checks_url")
+
+          if echo "$checks_body" | tr -d '\n' | grep -Fq "\"name\":\"$CHECK_NAME\""; then
+            echo "AI Review Gate check already reported."
+            exit 0
+          fi
+
+          payload=$(cat <<EOF
+          {
+            "name": "$CHECK_NAME",
+            "head_sha": "$HEAD_SHA",
+            "status": "completed",
+            "conclusion": "neutral",
+            "output": {
+              "title": "$CHECK_NAME",
+              "summary": "AI Review Gate was not reported by the action.",
+              "text": "A neutral safeguard check was created so the required check does not remain pending forever. Review the workflow logs and action version if this happens repeatedly."
+            }
+          }
+          EOF
+          )
+
+          create_body=$(curl -sS \
+            -X POST "https://api.github.com/repos/$REPO/check-runs" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+
+          echo "Safeguard AI Review Gate response: $create_body"
