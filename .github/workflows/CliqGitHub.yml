@@ -94,11 +94,12 @@ jobs:
         env:
           PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
           CLIQ_THREAD_STORAGE_MODE: project
-          GITHUB_PROJECT_ID: ${{ vars.GITHUB_PROJECT_ID }}
+          # Set directly in workflow to avoid repository variables.
+          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: Cliq Thread ID
-          GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.GITHUB_PROJECT_THREAD_FIELD_ID }}
+          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           AI_REVIEW_CHECK_NAME: AI Review Gate
@@ -135,7 +136,7 @@ jobs:
         shell: bash
         env:
           PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
-          GITHUB_PROJECT_ID: ${{ vars.GITHUB_PROJECT_ID }}
+          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
         run: |
@@ -187,12 +188,12 @@ jobs:
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
           # Optional: direct project id (for example, PVT_kwHOA...). If set, owner/number lookup is skipped.
-          GITHUB_PROJECT_ID: ${{ vars.GITHUB_PROJECT_ID }}
+          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
           # Optional: set direct field id if you already know it (for example, PVTF_xxx).
-          GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.GITHUB_PROJECT_THREAD_FIELD_ID }}
+          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
         with:
           channel-endpoint: ${{ secrets.ENDPOINT }}
           #branch-protection-rule-message: 'Security Update :Security:\n (event) (rule) is (action) by (me) at (repo) under (ref)'
@@ -241,12 +242,12 @@ jobs:
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
           # Optional: direct project id (for example, PVT_kwHOA...). If set, owner/number lookup is skipped.
-          GITHUB_PROJECT_ID: ${{ vars.GITHUB_PROJECT_ID }}
+          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
           # Optional: set direct field id if you already know it (for example, PVTF_xxx).
-          GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.GITHUB_PROJECT_THREAD_FIELD_ID }}
+          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
           PULL_REQUEST_DIFF_URL: ${{ github.event.pull_request.diff_url }}
           PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
