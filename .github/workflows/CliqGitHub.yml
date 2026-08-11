@@ -71,15 +71,24 @@ permissions:
   checks: write
   issues: write
   pull-requests: write
+  projects: write
   
 jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.8
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.9
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # Previous mode (PR marker comment storage):
+          # CLIQ_THREAD_STORAGE_MODE: comment
+          CLIQ_THREAD_STORAGE_MODE: project
+          GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
+          GITHUB_PROJECT_NUMBER: 1
+          GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
+          # Optional: set direct field id if you already know it (for example, PVTF_xxx).
+          GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.GITHUB_PROJECT_THREAD_FIELD_ID }}
         with:
           channel-endpoint: ${{ secrets.ENDPOINT }}
           #branch-protection-rule-message: 'Security Update :Security:\n (event) (rule) is (action) by (me) at (repo) under (ref)'
@@ -120,9 +129,17 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v1.8
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.9
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # Previous mode (PR marker comment storage):
+          # CLIQ_THREAD_STORAGE_MODE: comment
+          CLIQ_THREAD_STORAGE_MODE: project
+          GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
+          GITHUB_PROJECT_NUMBER: 1
+          GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
+          # Optional: set direct field id if you already know it (for example, PVTF_xxx).
+          GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.GITHUB_PROJECT_THREAD_FIELD_ID }}
           PULL_REQUEST_DIFF_URL: ${{ github.event.pull_request.diff_url }}
           PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
