@@ -78,8 +78,9 @@ jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
     env:
-      # Configure this once. Optional repo/org variable CLIQ_THREAD_FIELD_NAME can override it.
-      GITHUB_PROJECT_THREAD_FIELD_NAME: ${{ vars.CLIQ_THREAD_FIELD_NAME || 'Cliq Thread ID' }}
+      # Configure this once. Use the numeric field identifier from the Project field settings URL,
+      # or provide the GraphQL node id directly (PVTF_*).
+      GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '377241900' }}
       # Configure this once. Optional repo/org variable CLIQ_PROJECT_NUMBER can override it.
       GITHUB_PROJECT_NUMBER: ${{ vars.CLIQ_PROJECT_NUMBER || '1' }}
     steps:
@@ -115,8 +116,8 @@ jobs:
           echo "Debug: project_owner=$GITHUB_PROJECT_OWNER"
           echo "Debug: project_number=$GITHUB_PROJECT_NUMBER"
           echo "Debug: project_id=<auto-resolve via owner+number>"
-          echo "Debug: project_field_name=$GITHUB_PROJECT_THREAD_FIELD_NAME"
-          echo "Debug: project_field_id=<auto-resolve by field name>"
+          echo "Debug: project_field_identifier=$GITHUB_PROJECT_THREAD_FIELD_ID"
+          echo "Debug: project_field_id=<auto-resolve by identifier or direct node id>"
           if [[ -n "$PROJECT_TOKEN" ]]; then
             echo "Debug: project_token_present=true"
           else
@@ -241,7 +242,7 @@ jobs:
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.12
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.13
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -292,7 +293,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.12
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.13
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
