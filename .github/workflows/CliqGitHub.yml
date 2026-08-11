@@ -130,6 +130,54 @@ jobs:
             echo "Debug: project_token_present=false"
           fi
 
+      - name: Debug GitHub project lookup
+        if: ${{ github.event_name == 'pull_request_target' }}
+        shell: bash
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          GITHUB_PROJECT_ID: ${{ vars.GITHUB_PROJECT_ID }}
+          GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
+          GITHUB_PROJECT_NUMBER: 1
+        run: |
+          owner="$GITHUB_PROJECT_OWNER"
+          number="$GITHUB_PROJECT_NUMBER"
+
+          echo "DebugLookup: owner=$owner number=$number"
+
+          query_user='{"query":"query($owner:String!,$projectNumber:Int!){user(login:$owner){login projectV2(number:$projectNumber){id title number}}}","variables":{"owner":"'"$owner"'","projectNumber":'"$number"'}}'
+          user_status=$(curl -sS -o /tmp/user_lookup.json -w "%{http_code}" \
+            -X POST https://api.github.com/graphql \
+            -H "Authorization: Bearer $PROJECT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$query_user")
+          echo "DebugLookup: user_query_status=$user_status"
+          tr -d '\n' </tmp/user_lookup.json | sed 's/.\{900\}$/.../;q'
+          echo
+
+          query_org='{"query":"query($owner:String!,$projectNumber:Int!){organization(login:$owner){login projectV2(number:$projectNumber){id title number}}}","variables":{"owner":"'"$owner"'","projectNumber":'"$number"'}}'
+          org_status=$(curl -sS -o /tmp/org_lookup.json -w "%{http_code}" \
+            -X POST https://api.github.com/graphql \
+            -H "Authorization: Bearer $PROJECT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$query_org")
+          echo "DebugLookup: org_query_status=$org_status"
+          tr -d '\n' </tmp/org_lookup.json | sed 's/.\{900\}$/.../;q'
+          echo
+
+          if [[ -n "$GITHUB_PROJECT_ID" ]]; then
+            query_id='{"query":"query($projectId:ID!){node(id:$projectId){... on ProjectV2{id title number owner{... on User{login} ... on Organization{login}}}}}","variables":{"projectId":"'"$GITHUB_PROJECT_ID"'"}}'
+            id_status=$(curl -sS -o /tmp/id_lookup.json -w "%{http_code}" \
+              -X POST https://api.github.com/graphql \
+              -H "Authorization: Bearer $PROJECT_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$query_id")
+            echo "DebugLookup: id_query_status=$id_status"
+            tr -d '\n' </tmp/id_lookup.json | sed 's/.\{900\}$/.../;q'
+            echo
+          else
+            echo "DebugLookup: id_query_skipped (GITHUB_PROJECT_ID is empty)"
+          fi
+
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
         uses: Lincy-Zoho/GitHub-Informer-New@v2.3
         env:
