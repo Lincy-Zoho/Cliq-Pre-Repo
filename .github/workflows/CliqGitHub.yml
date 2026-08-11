@@ -200,8 +200,8 @@ jobs:
           fi
 
           if [[ -z "$project_id" ]]; then
-            echo "Project lookup failed: $project_body"
-            exit 1
+            echo "::warning::Project lookup failed. Skipping project pre-insert. Details: $project_body"
+            exit 0
           fi
 
           pr_query='{"query":"query($owner:String!,$repo:String!,$prNumber:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$prNumber){id}}}","variables":{"owner":"'"$owner"'","repo":"'"$repo"'","prNumber":'"$pr"'}}'
@@ -212,8 +212,8 @@ jobs:
 
           pr_id=$(echo "$pr_body" | sed -n 's/.*"pullRequest":{"id":"\([^"]*\)"}.*/\1/p')
           if [[ -z "$pr_id" ]]; then
-            echo "PR node lookup failed: $pr_body"
-            exit 1
+            echo "::warning::PR node lookup failed. Skipping project pre-insert. Details: $pr_body"
+            exit 0
           fi
 
           existing_query='{"query":"query($prId:ID!){node(id:$prId){... on PullRequest{projectItems(first:100){nodes{project{id}}}}}}","variables":{"prId":"'"$pr_id"'"}}'
@@ -234,14 +234,14 @@ jobs:
             -d "$add_mutation")
 
           if echo "$add_body" | grep -q '"errors"'; then
-            echo "Failed adding PR to project: $add_body"
-            exit 1
+            echo "::warning::Failed adding PR to project table. Continuing without blocking merge. Details: $add_body"
+            exit 0
           fi
 
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.11
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.12
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -292,7 +292,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.11
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.12
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
