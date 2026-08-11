@@ -240,7 +240,7 @@ jobs:
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.5
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.6
         env:
           # Use explicit PAT for private ProjectV2 reads/writes.
           GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
@@ -292,7 +292,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.5
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.6
         env:
           # Use explicit PAT for private ProjectV2 reads/writes.
           GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
