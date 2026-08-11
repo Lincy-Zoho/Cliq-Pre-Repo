@@ -142,7 +142,7 @@ jobs:
           #set-message-if-none: true
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
-      - if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
+      - if: ${{ github.event_name == 'pull_request'}}
         uses: Lincy-Zoho/GitHub-Informer-New@v2.3
         env:
           # Use explicit PAT for private ProjectV2 reads/writes.
