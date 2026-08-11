@@ -94,12 +94,9 @@ jobs:
         env:
           PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
           CLIQ_THREAD_STORAGE_MODE: project
-          # Set directly in workflow to avoid repository variables.
-          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: Cliq Thread ID
-          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           AI_REVIEW_CHECK_NAME: AI Review Gate
@@ -114,17 +111,9 @@ jobs:
           echo "Debug: storage_mode=$CLIQ_THREAD_STORAGE_MODE"
           echo "Debug: project_owner=$GITHUB_PROJECT_OWNER"
           echo "Debug: project_number=$GITHUB_PROJECT_NUMBER"
-          if [[ -n "$GITHUB_PROJECT_ID" ]]; then
-            echo "Debug: project_id=$GITHUB_PROJECT_ID"
-          else
-            echo "Debug: project_id=<empty>"
-          fi
+          echo "Debug: project_id=<auto-resolve via owner+number>"
           echo "Debug: project_field_name=$GITHUB_PROJECT_THREAD_FIELD_NAME"
-          if [[ -n "$GITHUB_PROJECT_THREAD_FIELD_ID" ]]; then
-            echo "Debug: project_field_id=$GITHUB_PROJECT_THREAD_FIELD_ID"
-          else
-            echo "Debug: project_field_id=<empty>"
-          fi
+          echo "Debug: project_field_id=<auto-resolve by field name>"
           if [[ -n "$PROJECT_TOKEN" ]]; then
             echo "Debug: project_token_present=true"
           else
@@ -136,7 +125,6 @@ jobs:
         shell: bash
         env:
           PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
-          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
         run: |
@@ -165,35 +153,21 @@ jobs:
           tr -d '\n' </tmp/org_lookup.json | sed 's/.\{900\}$/.../;q'
           echo
 
-          if [[ -n "$GITHUB_PROJECT_ID" ]]; then
-            query_id='{"query":"query($projectId:ID!){node(id:$projectId){... on ProjectV2{id title number owner{... on User{login} ... on Organization{login}}}}}","variables":{"projectId":"'"$GITHUB_PROJECT_ID"'"}}'
-            id_status=$(curl -sS -o /tmp/id_lookup.json -w "%{http_code}" \
-              -X POST https://api.github.com/graphql \
-              -H "Authorization: Bearer $PROJECT_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "$query_id")
-            echo "DebugLookup: id_query_status=$id_status"
-            tr -d '\n' </tmp/id_lookup.json | sed 's/.\{900\}$/.../;q'
-            echo
-          else
-            echo "DebugLookup: id_query_skipped (GITHUB_PROJECT_ID is empty)"
-          fi
+          echo "DebugLookup: id_query_skipped (auto mode uses owner+number)"
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.3
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.4
         env:
           # Use explicit PAT for private ProjectV2 reads/writes.
           GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
           # Previous mode (PR marker comment storage):
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
-          # Optional: direct project id (for example, PVT_kwHOA...). If set, owner/number lookup is skipped.
-          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
+          # Auto mode: resolve project id by owner + number.
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
-          # Optional: set direct field id if you already know it (for example, PVTF_xxx).
-          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
+          # Auto mode: resolve field id by field name.
         with:
           channel-endpoint: ${{ secrets.ENDPOINT }}
           #branch-protection-rule-message: 'Security Update :Security:\n (event) (rule) is (action) by (me) at (repo) under (ref)'
@@ -234,20 +208,18 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.3
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.4
         env:
           # Use explicit PAT for private ProjectV2 reads/writes.
           GITHUB_TOKEN: ${{ secrets.PROJECT_TOKEN }}
           # Previous mode (PR marker comment storage):
           # CLIQ_THREAD_STORAGE_MODE: comment
           CLIQ_THREAD_STORAGE_MODE: project
-          # Optional: direct project id (for example, PVT_kwHOA...). If set, owner/number lookup is skipped.
-          GITHUB_PROJECT_ID: "PVT_REPLACE_WITH_YOUR_PROJECT_ID"
+          # Auto mode: resolve project id by owner + number.
           GITHUB_PROJECT_OWNER: ${{ github.repository_owner }}
           GITHUB_PROJECT_NUMBER: 1
           GITHUB_PROJECT_THREAD_FIELD_NAME: "Cliq Thread ID"
-          # Optional: set direct field id if you already know it (for example, PVTF_xxx).
-          GITHUB_PROJECT_THREAD_FIELD_ID: "PVTF_REPLACE_WITH_YOUR_FIELD_ID"
+          # Auto mode: resolve field id by field name.
           PULL_REQUEST_DIFF_URL: ${{ github.event.pull_request.diff_url }}
           PULL_REQUEST_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PULL_REQUEST_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
