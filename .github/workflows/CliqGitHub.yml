@@ -37,8 +37,9 @@ on:
   public:
     # No Types
   pull_request:
-    # Keep only actions that produce AI Review Gate in auto mode.
-    types: [ opened , reopened , synchronize ]
+    # Include closed so PR close notifications can post in the existing Cliq thread.
+    # AI review auto-mode still runs only on opened/reopened/synchronize.
+    types: [ opened , reopened , synchronize , closed ]
   pull_request_target:
     # It works only for opened , synchronize and reopened if not specified
     types: [ assigned , unassigned , labeled , unlabeled , opened , closed , edited , reopened , synchronize , converted_to_draft , ready_for_review , locked , unlocked , review_requested , review_request_removed , auto_merge_enabled , auto_merge_disabled ]
@@ -78,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.9
         env:
           GITHUB_TOKEN: ${{ github.token }}
           # Previous mode (PR marker comment storage):
@@ -129,7 +130,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2
+        uses: Lincy-Zoho/GitHub-Informer-New@v1.9
         env:
           GITHUB_TOKEN: ${{ github.token }}
           # Previous mode (PR marker comment storage):
