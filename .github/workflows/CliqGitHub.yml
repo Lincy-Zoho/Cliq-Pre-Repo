@@ -298,7 +298,7 @@ jobs:
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.15
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.16
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -349,7 +349,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.15
+        uses: Lincy-Zoho/GitHub-Informer-New@v2.16
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -385,7 +385,21 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHECK_NAME: AI Review Gate
+          PR_ACTION: ${{ github.event.action }}
+          AI_REVIEW_ON_SYNC: true
         run: |
+          expected=false
+          if [[ "$PR_ACTION" == "opened" || "$PR_ACTION" == "reopened" ]]; then
+            expected=true
+          elif [[ "$PR_ACTION" == "synchronize" && "$AI_REVIEW_ON_SYNC" == "true" ]]; then
+            expected=true
+          fi
+
+          if [[ "$expected" != "true" ]]; then
+            echo "AI Review Gate is not expected for pull_request_target action '$PR_ACTION'. Skipping safeguard."
+            exit 0
+          fi
+
           checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs"
           # GitHub check-runs API can be eventually consistent for a short time.
           # Wait up to ~60 seconds before declaring the check missing.
