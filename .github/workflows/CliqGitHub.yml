@@ -79,9 +79,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Supported values: user or bot. Defaulted to bot for bot-auth posting.
-      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'bot' }}
+      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'user' }}
       # Required when CLIQ_NOTIFICATION_MODE=bot. Configure in repo/org variable.
-      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || 'githubnotification' }}
+      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || '' }}
       # Configure this once. Use the numeric field identifier from the Project field settings URL,
       # or provide the GraphQL node id directly (PVTF_*).
       GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '' }}
