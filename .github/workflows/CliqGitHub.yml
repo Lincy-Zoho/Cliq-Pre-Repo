@@ -78,13 +78,13 @@ jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
     env:
-      # Supported values: user or bot
-      CLIQ_NOTIFICATION_MODE: user
-      # Required only when CLIQ_NOTIFICATION_MODE=bot.
-      CLIQ_BOT_UNIQUE_NAME: "githubnotification"
+      # Supported values: user or bot. Defaulted to bot for bot-auth posting.
+      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'bot' }}
+      # Required when CLIQ_NOTIFICATION_MODE=bot. Configure in repo/org variable.
+      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || 'githubnotification' }}
       # Configure this once. Use the numeric field identifier from the Project field settings URL,
       # or provide the GraphQL node id directly (PVTF_*).
-      GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '377241900' }}
+      GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '' }}
       # Configure this once. Optional repo/org variable CLIQ_PROJECT_NUMBER can override it.
       GITHUB_PROJECT_NUMBER: ${{ vars.CLIQ_PROJECT_NUMBER || '1' }}
     steps:
@@ -118,18 +118,25 @@ jobs:
             fi
 
             endpoint="$RAW_CLIQ_ENDPOINT"
-            if [[ "$endpoint" == *"githubnotification="* ]]; then
+            if [[ "$endpoint" == *"bot_unique_name="* ]]; then
               resolved_endpoint="$endpoint"
             elif [[ "$endpoint" == *"?"* ]]; then
               resolved_endpoint="$endpoint&bot_unique_name=$CLIQ_BOT_UNIQUE_NAME"
             else
               resolved_endpoint="$endpoint?bot_unique_name=$CLIQ_BOT_UNIQUE_NAME"
             fi
+
+            if [[ "$resolved_endpoint" != *"bot_unique_name="* ]]; then
+              echo "Failed to construct bot endpoint with bot_unique_name query parameter."
+              exit 1
+            fi
           else
             resolved_endpoint="$RAW_CLIQ_ENDPOINT"
           fi
 
+          resolved_endpoint_preview=$(printf '%s' "$resolved_endpoint" | sed -E 's/(zapikey=)[^&]+/\1***REDACTED***/g')
           echo "resolved-endpoint=$resolved_endpoint" >> "$GITHUB_OUTPUT"
+          echo "resolved-endpoint-preview=$resolved_endpoint_preview" >> "$GITHUB_OUTPUT"
 
       - name: Debug project configuration
         if: ${{ github.event_name == 'pull_request_target' }}
@@ -151,6 +158,12 @@ jobs:
             echo "Debug: cliq_bot_unique_name_present=true"
           else
             echo "Debug: cliq_bot_unique_name_present=false"
+          fi
+          echo "Debug: cliq_endpoint_preview=${{ steps.prepare-cliq-endpoint.outputs.resolved-endpoint-preview }}"
+          if [[ "${{ steps.prepare-cliq-endpoint.outputs.resolved-endpoint }}" == *"bot_unique_name="* ]]; then
+            echo "Debug: cliq_endpoint_has_bot_unique_name=true"
+          else
+            echo "Debug: cliq_endpoint_has_bot_unique_name=false"
           fi
           echo "Debug: pr_head_sha=$PR_HEAD_SHA"
           echo "Debug: pr_base_sha=$PR_BASE_SHA"
