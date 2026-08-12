@@ -385,6 +385,7 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHECK_NAME: AI Review Gate
+          PR_ACTION: ${{ github.event.action }}
         run: |
           checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs"
           checks_body=$(curl -sS \
@@ -397,16 +398,23 @@ jobs:
             exit 0
           fi
 
+          # Fail closed only when AI check is expected to be reliably present.
+          # On initial PR open, providers/diff fetch can be temporarily unavailable.
+          if [[ "$PR_ACTION" != "synchronize" && "$PR_ACTION" != "reopened" ]]; then
+            echo "AI Review Gate check missing on action '$PR_ACTION'. Skipping safeguard failure for this event; next synchronize/reopened must report AI check."
+            exit 0
+          fi
+
           payload=$(cat <<EOF
           {
             "name": "$CHECK_NAME",
             "head_sha": "$HEAD_SHA",
             "status": "completed",
-            "conclusion": "neutral",
+            "conclusion": "failure",
             "output": {
               "title": "$CHECK_NAME",
               "summary": "AI Review Gate was not reported by the action.",
-              "text": "A neutral safeguard check was created so the required check does not remain pending forever. Review the workflow logs and action version if this happens repeatedly."
+              "text": "Strict mode: a failing safeguard check was created to block merge until AI Review Gate is reliably reported as success. Review workflow logs and action version."
             }
           }
           EOF
