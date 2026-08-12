@@ -79,9 +79,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Supported values: user or bot. Defaulted to bot for bot-auth posting.
-      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'user' }}
+      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'bot' }}
       # Required when CLIQ_NOTIFICATION_MODE=bot. Configure in repo/org variable.
-      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || '' }}
+      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || 'githubnotification' }}
       # Configure this once. Use the numeric field identifier from the Project field settings URL,
       # or provide the GraphQL node id directly (PVTF_*).
       GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '' }}
@@ -385,23 +385,28 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           CHECK_NAME: AI Review Gate
-          PR_ACTION: ${{ github.event.action }}
         run: |
           checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs"
-          checks_body=$(curl -sS \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            "$checks_url")
+          # GitHub check-runs API can be eventually consistent for a short time.
+          # Wait up to ~60 seconds before declaring the check missing.
+          check_found=false 
+          for attempt in {1..12}; do
+            checks_body=$(curl -sS \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "$checks_url")
 
-          if echo "$checks_body" | tr -d '\n' | grep -Fq "\"name\":\"$CHECK_NAME\""; then
-            echo "AI Review Gate check already reported."
-            exit 0
-          fi
+            if echo "$checks_body" | tr -d '\n' | grep -Fq "\"name\":\"$CHECK_NAME\""; then
+              check_found=true
+              echo "AI Review Gate check already reported (attempt $attempt)."
+              break
+            fi
 
-          # Fail closed only when AI check is expected to be reliably present.
-          # On initial PR open, providers/diff fetch can be temporarily unavailable.
-          if [[ "$PR_ACTION" != "synchronize" && "$PR_ACTION" != "reopened" ]]; then
-            echo "AI Review Gate check missing on action '$PR_ACTION'. Skipping safeguard failure for this event; next synchronize/reopened must report AI check."
+            echo "AI Review Gate check not visible yet (attempt $attempt/12)."
+            sleep 5
+          done
+
+          if [[ "$check_found" == "true" ]]; then
             exit 0
           fi
 
@@ -414,7 +419,7 @@ jobs:
             "output": {
               "title": "$CHECK_NAME",
               "summary": "AI Review Gate was not reported by the action.",
-              "text": "Strict mode: a failing safeguard check was created to block merge until AI Review Gate is reliably reported as success. Review workflow logs and action version."
+              "text": "Strict mode: a failing safeguard check was created because no AI Review Gate status was found after retry. Verify AI_REVIEW_TOKEN, provider endpoint/model, and action logs."
             }
           }
           EOF
