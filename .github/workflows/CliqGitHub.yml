@@ -400,7 +400,8 @@ jobs:
             exit 0
           fi
 
-          checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs"
+          encoded_check_name=$(printf '%s' "$CHECK_NAME" | sed 's/ /%20/g')
+          checks_url="https://api.github.com/repos/$REPO/commits/$HEAD_SHA/check-runs?per_page=100&check_name=$encoded_check_name"
           # GitHub check-runs API can be eventually consistent for a short time.
           # Wait up to ~60 seconds before declaring the check missing.
           check_found=false 
@@ -410,7 +411,7 @@ jobs:
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               "$checks_url")
 
-            if echo "$checks_body" | tr -d '\n' | grep -Fq "\"name\":\"$CHECK_NAME\""; then
+            if echo "$checks_body" | tr -d '\n' | grep -Eq '"total_count"[[:space:]]*:[[:space:]]*[1-9]'; then
               check_found=true
               echo "AI Review Gate check already reported (attempt $attempt)."
               break
