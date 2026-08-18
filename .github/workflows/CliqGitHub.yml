@@ -77,14 +77,20 @@ permissions:
 jobs:
   connecting_cliq:
     runs-on: ubuntu-latest
+    # Gates ENDPOINT, PROJECT_TOKEN and AI_REVIEW_TOKEN behind a protected
+    # GitHub Environment. Only repo/org Admins (or designated required
+    # reviewers) can view, create, or modify these secrets, and runs against
+    # this environment can be restricted to protected branches only.
+    # Configure this in: Settings -> Environments -> cliq-production
+    environment: cliq-production
     env:
       # Supported values: user or bot. Defaulted to bot for bot-auth posting.
-      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'bot' }}
+      CLIQ_NOTIFICATION_MODE: ${{ vars.CLIQ_NOTIFICATION_MODE || 'user' }}
       # Required when CLIQ_NOTIFICATION_MODE=bot. Configure in repo/org variable.
-      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || 'githubnotification' }}
+      CLIQ_BOT_UNIQUE_NAME: ${{ vars.CLIQ_BOT_UNIQUE_NAME || '' }}
       # Configure this once. Use the numeric field identifier from the Project field settings URL,
       # or provide the GraphQL node id directly (PVTF_*).
-      GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '' }}
+      GITHUB_PROJECT_THREAD_FIELD_ID: ${{ vars.CLIQ_THREAD_FIELD_ID || '401236993' }}
       # Configure this once. Optional repo/org variable CLIQ_PROJECT_NUMBER can override it.
       GITHUB_PROJECT_NUMBER: ${{ vars.CLIQ_PROJECT_NUMBER || '1' }}
     steps:
@@ -298,7 +304,7 @@ jobs:
           echo "PR inserted into project table successfully."
 
       - if: ${{ github.event_name != 'pull_request' && github.event_name != 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.16
+        uses: Lincy-Zoho/GitHub-Informer-New@v3
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
@@ -349,7 +355,7 @@ jobs:
           #false makes GitHub-Informer not send the default messages if custom message is not set
 
       - if: ${{ github.event_name == 'pull_request_target' }}
-        uses: Lincy-Zoho/GitHub-Informer-New@v2.16
+        uses: Lincy-Zoho/GitHub-Informer-New@v3
         env:
           # Use workflow token for repo/PR APIs; use PROJECT_TOKEN only for ProjectV2 operations.
           GITHUB_TOKEN: ${{ github.token }}
